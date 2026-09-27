@@ -7,6 +7,7 @@ import httpx
 
 OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_MODEL = "openai/gpt-oss-120b"
+OPENROUTER_MAX_COMPLETION_TOKENS = 1200
 
 
 class OpenRouterError(RuntimeError):
@@ -90,12 +91,16 @@ class OpenRouterClient:
                 json={
                     "model": self.model,
                     "messages": messages,
+                    "max_completion_tokens": OPENROUTER_MAX_COMPLETION_TOKENS,
                     **({"response_format": response_format} if response_format else {}),
                 },
             )
             response.raise_for_status()
             payload = response.json()
-            content = payload["choices"][0]["message"]["content"]
+            choice = payload["choices"][0]
+            if choice.get("finish_reason") == "length":
+                raise OpenRouterError("OpenRouter response was truncated")
+            content = choice["message"]["content"]
         except httpx.TimeoutException as error:
             raise OpenRouterError("OpenRouter request timed out") from error
         except httpx.HTTPStatusError as error:

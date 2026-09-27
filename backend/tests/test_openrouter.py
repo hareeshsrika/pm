@@ -5,6 +5,7 @@ import pytest
 
 from app.openrouter import (
     OPENROUTER_ENDPOINT,
+    OPENROUTER_MAX_COMPLETION_TOKENS,
     OPENROUTER_MODEL,
     OpenRouterClient,
     OpenRouterConfigurationError,
@@ -59,6 +60,7 @@ def test_timeout_is_reported_as_a_safe_error() -> None:
 def test_json_completion_requests_strict_structured_output() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         payload = json.loads(request.read())
+        assert payload["max_completion_tokens"] == OPENROUTER_MAX_COMPLETION_TOKENS
         response_format = payload["response_format"]
         assert response_format["type"] == "json_schema"
         assert response_format["json_schema"]["strict"] is True
@@ -74,3 +76,23 @@ def test_json_completion_requests_strict_structured_output() -> None:
             [{"role": "user", "content": "2 + 2"}],
             {"type": "object", "properties": {"reply": {"type": "string"}}},
         ) == {"reply": "4"}
+
+
+def test_truncated_provider_response_is_reported() -> None:
+    transport = httpx.MockTransport(
+        lambda _: httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "finish_reason": "length",
+                        "message": {"content": '{"reply":"incomplete"}'},
+                    }
+                ]
+            },
+        )
+    )
+
+    with OpenRouterClient("test-key", transport=transport) as client:
+        with pytest.raises(OpenRouterError, match="truncated"):
+            client.complete("2 + 2")
