@@ -8,9 +8,10 @@ import { NewCardForm } from "@/components/NewCardForm";
 type KanbanColumnProps = {
   column: Column;
   cards: Card[];
-  onRename: (columnId: string, title: string) => void;
-  onAddCard: (columnId: string, title: string, details: string) => void;
-  onDeleteCard: (columnId: string, cardId: string) => void;
+  onRename: (columnId: string, title: string) => void | Promise<void>;
+  onAddCard: (columnId: string, title: string, details: string) => void | Promise<void>;
+  onEditCard: (cardId: string, title: string, details: string) => void | Promise<void>;
+  onDeleteCard: (cardId: string) => void | Promise<void>;
 };
 
 export const KanbanColumn = ({
@@ -18,6 +19,7 @@ export const KanbanColumn = ({
   cards,
   onRename,
   onAddCard,
+  onEditCard,
   onDeleteCard,
 }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
@@ -40,8 +42,14 @@ export const KanbanColumn = ({
             </span>
           </div>
           <input
-            value={column.title}
-            onChange={(event) => onRename(column.id, event.target.value)}
+            key={`${column.id}-${column.title}`}
+            defaultValue={column.title}
+            onBlur={(event) => {
+              const nextTitle = event.currentTarget.value.trim();
+              if (nextTitle && nextTitle !== column.title) {
+                onRename(column.id, nextTitle);
+              }
+            }}
             className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-[var(--navy-dark)] outline-none"
             aria-label="Column title"
           />
@@ -53,7 +61,8 @@ export const KanbanColumn = ({
             <KanbanCard
               key={card.id}
               card={card}
-              onDelete={(cardId) => onDeleteCard(column.id, cardId)}
+              onEdit={onEditCard}
+              onDelete={onDeleteCard}
             />
           ))}
         </SortableContext>

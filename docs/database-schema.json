@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "database": "SQLite",
+  "purpose": "Normalized storage for one Kanban board per user with ordered columns and cards.",
+  "tables": {
+    "users": {
+      "columns": [
+        { "name": "id", "type": "TEXT", "nullable": false },
+        { "name": "username", "type": "TEXT", "nullable": false },
+        { "name": "password_hash", "type": "TEXT", "nullable": true },
+        { "name": "created_at", "type": "TEXT", "nullable": false }
+      ],
+      "primary_key": ["id"],
+      "unique": [["username"]]
+    },
+    "boards": {
+      "columns": [
+        { "name": "id", "type": "TEXT", "nullable": false },
+        { "name": "user_id", "type": "TEXT", "nullable": false },
+        { "name": "name", "type": "TEXT", "nullable": false },
+        { "name": "created_at", "type": "TEXT", "nullable": false },
+        { "name": "updated_at", "type": "TEXT", "nullable": false }
+      ],
+      "primary_key": ["id"],
+      "unique": [["user_id"]],
+      "foreign_keys": [
+        { "columns": ["user_id"], "references": "users(id)", "on_delete": "CASCADE" }
+      ]
+    },
+    "columns": {
+      "columns": [
+        { "name": "id", "type": "TEXT", "nullable": false },
+        { "name": "board_id", "type": "TEXT", "nullable": false },
+        { "name": "title", "type": "TEXT", "nullable": false },
+        { "name": "position", "type": "INTEGER", "nullable": false }
+      ],
+      "primary_key": ["id"],
+      "unique": [["board_id", "position"], ["board_id", "id"]],
+      "foreign_keys": [
+        { "columns": ["board_id"], "references": "boards(id)", "on_delete": "CASCADE" }
+      ]
+    },
+    "cards": {
+      "columns": [
+        { "name": "id", "type": "TEXT", "nullable": false },
+        { "name": "board_id", "type": "TEXT", "nullable": false },
+        { "name": "column_id", "type": "TEXT", "nullable": false },
+        { "name": "title", "type": "TEXT", "nullable": false },
+        { "name": "details", "type": "TEXT", "nullable": false },
+        { "name": "position", "type": "INTEGER", "nullable": false },
+        { "name": "created_at", "type": "TEXT", "nullable": false },
+        { "name": "updated_at", "type": "TEXT", "nullable": false }
+      ],
+      "primary_key": ["id"],
+      "unique": [["column_id", "position"], ["board_id", "id"]],
+      "foreign_keys": [
+        { "columns": ["board_id"], "references": "boards(id)", "on_delete": "CASCADE" },
+        { "columns": ["board_id", "column_id"], "references": "columns(board_id, id)", "on_delete": "CASCADE" }
+      ]
+    }
+  },
+  "ordering_rules": {
+    "column_position": "Zero-based integer order within a board.",
+    "card_position": "Zero-based integer order within a column.",
+    "mutation": "Renumber affected positions inside one transaction after a move or delete."
+  },
+  "fixed_board_rules": {
+    "columns": 5,
+    "column_order": ["Backlog", "Discovery", "In Progress", "Review", "Done"],
+    "rename_allowed": true,
+    "add_remove_columns_allowed": false,
+    "boards_per_user": 1
+  },
+  "initial_board": {
+    "name": "My Project",
+    "columns": [
+      { "id": "col-backlog", "title": "Backlog", "position": 0 },
+      { "id": "col-discovery", "title": "Discovery", "position": 1 },
+      { "id": "col-progress", "title": "In Progress", "position": 2 },
+      { "id": "col-review", "title": "Review", "position": 3 },
+      { "id": "col-done", "title": "Done", "position": 4 }
+    ]
+  },
+  "representative_records": {
+    "users": [
+      {
+        "id": "user-1",
+        "username": "user",
+        "password_hash": null,
+        "created_at": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "boards": [
+      {
+        "id": "board-user-1",
+        "user_id": "user-1",
+        "name": "My Project",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "columns": [
+      {
+        "id": "col-backlog",
+        "board_id": "board-user-1",
+        "title": "Backlog",
+        "position": 0
+      }
+    ],
+    "cards": [
+      {
+        "id": "card-1",
+        "board_id": "board-user-1",
+        "column_id": "col-backlog",
+        "title": "Align roadmap themes",
+        "details": "Draft quarterly themes with impact statements and metrics.",
+        "position": 0,
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z"
+      }
+    ]
+  },
+  "board_api_json": {
+    "id": "board-user-1",
+    "columns": [
+      {
+        "id": "col-backlog",
+        "title": "Backlog",
+        "cardIds": ["card-1"]
+      }
+    ],
+    "cards": {
+      "card-1": {
+        "id": "card-1",
+        "title": "Align roadmap themes",
+        "details": "Draft quarterly themes with impact statements and metrics."
+      }
+    }
+  }
+}
