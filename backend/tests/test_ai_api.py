@@ -145,6 +145,25 @@ def test_chat_accepts_a_reply_without_board_operations(client: TestClient) -> No
     assert response.json()["reply"] == "Your board is up to date."
 
 
+def test_chat_completes_an_incomplete_board_summary(client: TestClient) -> None:
+    fake = FakeOpenRouterClient(
+        {"reply": "The Done column contains:", "operations": []}
+    )
+    main.app.dependency_overrides[main.get_openrouter_client] = lambda: fake
+    try:
+        login(client)
+        response = client.post(
+            "/api/ai/chat",
+            json={"message": "What's in Done status?"},
+        )
+    finally:
+        main.app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert "Close onboarding sprint" in response.json()["reply"]
+    assert "Document release notes and share internally." in response.json()["reply"]
+
+
 def test_chat_rejects_malformed_provider_output(client: TestClient) -> None:
     fake = FakeOpenRouterClient(
         {

@@ -26,6 +26,7 @@ from .ai import (
     ChatRequest,
     apply_board_operations,
     build_messages,
+    complete_incomplete_reply,
     response_schema,
 )
 from .config import get_settings
@@ -153,7 +154,9 @@ def chat(
             DATABASE_PATH, user_id, assistant_response.operations
         )
         return {
-            "reply": assistant_response.reply,
+            "reply": complete_incomplete_reply(
+                updated_board, payload.message, assistant_response.reply
+            ),
             "operations": [
                 operation.model_dump() for operation in assistant_response.operations
             ],

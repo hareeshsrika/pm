@@ -72,6 +72,33 @@ class ChatRequest(BaseModel):
     history: list[ChatMessage] = Field(default_factory=list, max_length=20)
 
 
+def _format_column_details(board: dict, column: dict) -> str:
+    card_lines = []
+    for card_id in column["cardIds"]:
+        card = board["cards"][card_id]
+        details = card["details"] or "No details provided."
+        card_lines.append(f"- {card['title']}: {details}")
+    if not card_lines:
+        card_lines.append("- No cards.")
+    return f"{column['title']} ({len(column['cardIds'])} cards):\n" + "\n".join(card_lines)
+
+
+def complete_incomplete_reply(board: dict, message: str, reply: str) -> str:
+    """Add authoritative board details when the model returns only a preface."""
+    if not reply.rstrip().endswith(":"):
+        return reply
+
+    normalized_message = message.casefold()
+    requested_columns = [
+        column
+        for column in board["columns"]
+        if column["title"].casefold() in normalized_message
+    ]
+    columns = requested_columns or board["columns"]
+    details = "\n\n".join(_format_column_details(board, column) for column in columns)
+    return f"{reply.rstrip()}\n\n{details}"
+
+
 def response_schema() -> dict:
     return AssistantResponse.model_json_schema()
 

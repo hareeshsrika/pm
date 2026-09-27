@@ -72,9 +72,9 @@ export const ChatSidebar = ({ onBoardUpdated }: ChatSidebarProps) => {
           <div
             key={`${item.role}-${index}`}
             className={
-              item.role === "user"
-                ? "ml-5 rounded-2xl bg-[var(--navy-dark)] p-3 text-sm leading-6 text-white"
-                : "mr-5 rounded-2xl bg-[var(--surface)] p-3 text-sm leading-6 text-[var(--navy-dark)]"
+                item.role === "user"
+                ? "ml-5 whitespace-pre-line rounded-2xl bg-[var(--navy-dark)] p-3 text-sm leading-6 text-white"
+                : "mr-5 whitespace-pre-line rounded-2xl bg-[var(--surface)] p-3 text-sm leading-6 text-[var(--navy-dark)]"
             }
           >
             {item.content}
